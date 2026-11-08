@@ -42,3 +42,11 @@ void Book::displayBookInfo(){
 int Book::getBookId() const{
     return book_id;
 }
+
+void Book::updateTitle(string s){
+    title = s;
+}
+
+void Book::updateAuthor(string s){
+    author = s;
+}

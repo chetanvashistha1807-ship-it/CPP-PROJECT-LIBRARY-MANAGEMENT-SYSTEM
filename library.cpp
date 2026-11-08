@@ -25,3 +25,51 @@ Book* Library::searchBookById(int id){
 
 
 }
+
+bool Library::updateInfo(int bookId, int choice){
+    
+    for(int i=0; i<books.size(); i++){
+        if(books[i].getBookId()==bookId){
+           int found = i;
+           if(choice==1){
+            string s;
+            cout<<"Enter new title: ";
+            cin>>s;
+ 
+            books[found].updateTitle(s);
+            cout<<"successfully updated";
+            return true;
+            } 
+            else if(choice==2){
+                string s;
+                cout<<"Enter new Author: ";
+                cin>>s;
+                books[found].updateAuthor(s);
+                cout<<"successfully updated";
+                return true;
+            } else if(choice==3){
+                cout<<"Updation cancelled";
+                return false;
+            } else {cout<<"invalid choice";
+                return false;}
+            
+           
+        }
+    }
+
+    cout<<"Book not found";
+    return false;
+    
+}
+
+bool Library::deleteBook(int bookId){
+    for(int i = 0; i<books.size(); i++){
+        if(books[i].getBookId()==bookId){
+            books.erase(books.begin()+i);
+            cout<<"Book deleted successfully";
+            return true;
+        }
+    }
+    cout<<"Book is not found";
+    return false;
+}

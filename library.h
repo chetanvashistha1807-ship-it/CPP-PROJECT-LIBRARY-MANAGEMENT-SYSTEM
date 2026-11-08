@@ -13,6 +13,12 @@ class Library{
     
     Book* searchBookById(int id);
 
+    bool updateInfo(int bookId, int choice);
+
+    bool deleteBook(int bookId);
+
+    
+
     
 
 

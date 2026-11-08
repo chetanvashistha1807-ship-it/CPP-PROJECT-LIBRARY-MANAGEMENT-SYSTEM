@@ -19,6 +19,15 @@ int main(){
         x->displayBookInfo();
     } else cout<<"Book Not found";
 
+    lib.updateInfo(102,1);
+    lib.updateInfo(102,2);
+    lib.updateInfo(102,3);
+    lib.updateInfo(102,4);
+    lib.updateInfo(104,1);
+
+    lib.deleteBook(101);
+    lib.displayBooks();
+
 
 
 }
