@@ -5,6 +5,13 @@
 using namespace std;
 
 void Library::addBook(const Book& book){
+    int x = book.getBookId();
+    for(int i = 0; i<books.size(); i++){
+        if(x==books[i].getBookId()){
+            cout<<"Book Id already exists ";
+            return;
+        }
+    }
     books.push_back(book);
 }
 
@@ -18,9 +25,11 @@ void Library::displayBooks(){
 Book* Library::searchBookById(int id){
     for(int i = 0; i<books.size(); i++){
          if(books[i].getBookId()==id){
+            books[i].displayBookInfo();
             return &books[i];
-         }
+         } 
     }
+    cout<<"Book Not found";
     return  nullptr;
 
 

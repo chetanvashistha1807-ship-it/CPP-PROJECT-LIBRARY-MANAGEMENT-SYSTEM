@@ -3,16 +3,22 @@
 
 
 Book::Book(int id, string Title, string Author, int Total_copies, int Available_copies){
+    if(id>0){
+        book_id = id;
+    } else{
+        throw "Invalid book id";
+    }
     if(Total_copies>=0)total_copies = Total_copies;
-    else throw "Invalid";
+    else throw "Invalid total copies";
 
     if(Available_copies>=0 && Available_copies<=Total_copies)available_copies =Available_copies;
-    else throw "Invalid";
+    else throw "Invalid available copies";
 
     title = Title;
     author = Author;
-    book_id = id;
+    
 }
+
  
 bool Book::issueBook(){
     if(available_copies>0){
