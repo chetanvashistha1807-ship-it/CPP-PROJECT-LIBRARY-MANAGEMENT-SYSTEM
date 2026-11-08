@@ -1,0 +1,7 @@
+*.exe
+*.o
+*.out
+.vscode/
+Singly-Linked-list.cpp
+student.cpp
+vector-practice.cpp
