@@ -1,23 +1,30 @@
 #pragma once
 #include<vector>
 #include "book.h"
+#include "member.h"
 using namespace std;
 
 class Library{
     private:
     vector<Book> books;
+    vector<Member> members;
 
     public:
     void addBook(const Book& book); //Here we used const so that the library class can't modify the book object and we passed it by refrence rather than value
     void displayBooks();
-    
     Book* searchBookById(int id);
-
-    bool updateInfo(int bookId, int choice);
-
-    bool deleteBook(int bookId);
-
+    bool updateBookInfo(int bookId);
+    bool deleteBook();
     void sortBooksById();
     void sortBooksByTitle();
+
+
+    void addMember(const Member& member);
+    void displayMembers();
+    Member* searchMemberById(int id);
+    bool updateMemberInfo(int id);
+    bool deleteMember();
+    void sortMembersById();
+
     
 };
