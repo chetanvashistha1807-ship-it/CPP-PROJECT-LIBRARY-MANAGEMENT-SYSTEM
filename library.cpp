@@ -1,5 +1,6 @@
 #include "library.h"
 #include<iostream>
+#include<algorithm> //used for using inbuilt sort function of cpp.
 
 
 using namespace std;
@@ -81,4 +82,19 @@ bool Library::deleteBook(int bookId){
     }
     cout<<"Book is not found";
     return false;
+}
+
+void Library::sortBooksById() {
+    std::sort(books.begin(), books.end(),
+        [](const Book& a, const Book& b) {                //It is a comparator, provides functionality of ssearching by parameters.
+            return a.getBookId() < b.getBookId();
+        }
+    );
+}
+
+void Library::sortBooksByTitle(){
+    std::sort(books.begin(), books.end(),
+               [](const Book& a, const Book &b){
+                return a.getTitle() < b.getTitle();
+               });
 }

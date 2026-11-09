@@ -49,6 +49,10 @@ int Book::getBookId() const{
     return book_id;
 }
 
+string Book::getTitle() const{
+    return title;
+}
+
 void Book::updateTitle(string s){
     title = s;
 }

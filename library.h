@@ -17,9 +17,7 @@ class Library{
 
     bool deleteBook(int bookId);
 
+    void sortBooksById();
+    void sortBooksByTitle();
     
-
-    
-
-
 };

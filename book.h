@@ -20,6 +20,7 @@ class Book{
     void displayBookInfo();
 
     int getBookId() const;
+    string getTitle() const;
 
     void updateTitle(string s);
     void updateAuthor(string s);
