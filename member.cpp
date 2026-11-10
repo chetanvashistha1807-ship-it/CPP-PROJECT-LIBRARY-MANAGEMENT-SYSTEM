@@ -50,3 +50,30 @@ void Member::displayMemberInfo(){
    
     
 }
+
+bool Member::addBorrowedBook(int id){
+    for(int i = 0; i<borrowedBookIds.size(); i++){
+        if(borrowedBookIds[i]==id){
+            cout<<"Book with same book id has already been borrowed by member.";
+            return false;
+        }
+    }
+
+    borrowedBookIds.push_back(id);
+    return true;
+
+}
+
+bool Member::removeBook(int id){
+    for(int i = 0; i<borrowedBookIds.size(); i++){
+        if(borrowedBookIds[i]==id){
+            borrowedBookIds.erase(borrowedBookIds.begin()+i);
+            return true;
+        }
+    }
+
+    cout<<"No book with this book id found.";
+    return false;
+
+
+}

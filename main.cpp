@@ -1,132 +1,101 @@
 
 #include <iostream>
-#include "Book.h"
+#include <sstream>
+#include <string>
 #include "Library.h"
-#include "member.h"
+#include "Book.h"
+#include "Member.h"
 
 using namespace std;
 
+bool runTest(Library& library, string testName,
+             string input, string expectedOutput) {
+
+    istringstream testInput(input);
+    ostringstream testOutput;
+
+    streambuf* originalCin = cin.rdbuf();
+    streambuf* originalCout = cout.rdbuf();
+
+    cin.rdbuf(testInput.rdbuf());
+    cout.rdbuf(testOutput.rdbuf());
+
+    library.issuebook();
+
+    // Restore normal input and output
+    cin.rdbuf(originalCin);
+    cout.rdbuf(originalCout);
+
+    string actualOutput = testOutput.str();
+
+    bool passed = actualOutput.find(expectedOutput) != string::npos;
+
+    cout << (passed ? "[PASS] " : "[FAIL] ")
+         << testName << endl;
+
+    if (!passed) {
+        cout << "Expected: " << expectedOutput << endl;
+        cout << "Actual output: " << actualOutput << endl;
+    }
+
+    return passed;
+}
+
 int main() {
 
-    Library lib;
+    Library library;
 
-    // Sample books
-    Book b1(103, "The Hobbit", "J.R.R. Tolkien", 5, 5);
-    Book b2(101, "Atomic Habits", "James Clear", 3, 3);
-    Book b3(102, "The Alchemist", "Paulo Coelho", 4, 4);
-
-    lib.addBook(b1);
-    lib.addBook(b2);
-    lib.addBook(b3);
+    // Sample book: 2 available copies
+    Book b1(103, "The Alchemist", "Paulo Coelho", 2, 2);
+    library.addBook(b1);
 
     // Sample members
-    Member m1(203, "Chetan", "chetan@gmail.com", "9876543210");
-    Member m2(201, "Rahul", "rahul@gmail.com", "9876543211");
-    Member m3(202, "Aman", "aman@gmail.com", "9876543212");
+    Member m1(10, "Rahul", "rahul@gmail.com", "9876543210");
+    Member m2(20, "Aman", "aman@gmail.com", "9876543211");
+    Member m3(30, "Vikram", "vikram@gmail.com", "9876543212");
 
-    lib.addMember(m1);
-    lib.addMember(m2);
-    lib.addMember(m3);
+    library.addMember(m1);
+    library.addMember(m2);
+    library.addMember(m3);
 
-    int choice;
+    int passed = 0;
+    int total = 6;
 
-    do {
-        cout << "\n\n========== LIBRARY TEST MENU ==========\n";
-        cout << "1. Display Books\n";
-        cout << "2. Search Book\n";
-        cout << "3. Update Book\n";
-        cout << "4. Delete Book\n";
-        cout << "5. Sort Books by ID\n";
-        cout << "6. Sort Books by Title\n";
-        cout << "7. Display Members\n";
-        cout << "8. Search Member\n";
-        cout << "9. Update Member\n";
-        cout << "10. Delete Member\n";
-        cout << "11. Sort Members by ID\n";
-        cout << "0. Exit\n";
-        cout << "Enter choice: ";
+    cout << "\n===== AUTOMATED ISSUE BOOK TESTS =====\n\n";
 
-        cin >> choice;
+    // Test 1: Successful issuance
+    if (runTest(library, "Successful issuance",
+                "10\n103\n", "Book issued successfully"))
+        passed++;
 
-        switch (choice) {
+    // Test 2: Duplicate borrowing
+    if (runTest(library, "Duplicate borrowing",
+                "10\n103\n", "already been borrowed"))
+        passed++;
 
-            case 1:
-                lib.displayBooks();
-                break;
+    // Test 3: Another member successfully borrows
+    if (runTest(library, "Second member borrows book",
+                "20\n103\n", "Book issued successfully"))
+        passed++;
 
-            case 2: {
-                int id;
-                cout << "Enter Book ID: ";
-                cin >> id;
-                lib.searchBookById(id);
-                break;
-            }
+    // Test 4: No copies available
+    if (runTest(library, "No copies available",
+                "30\n103\n", "No copies available"))
+        passed++;
 
-            case 3: {
-                int id;
-                cout << "Enter Book ID: ";
-                cin >> id;
-                lib.updateBookInfo(id);
-                break;
-            }
+    // Test 5: Invalid member ID
+    if (runTest(library, "Invalid member ID",
+                "99\n", "No member found"))
+        passed++;
 
-            case 4:
-                lib.deleteBook();
-                break;
+    // Test 6: Invalid book ID
+    if (runTest(library, "Invalid book ID",
+                "20\n999\n", "No Book found"))
+        passed++;
 
-            case 5:
-                lib.sortBooksById();
-                cout << "Books sorted by ID.\n";
-                break;
-
-            case 6:
-                lib.sortBooksByTitle();
-                cout << "Books sorted by title.\n";
-                break;
-
-            case 7:
-                lib.displayMembers();
-                break;
-
-            case 8: {
-                int id;
-                cout << "Enter Member ID: ";
-                cin >> id;
-
-                Member* member = lib.searchMemberById(id);
-
-                if (member != nullptr) {
-                    member->displayMemberInfo();
-                }
-                break;
-            }
-
-            case 9: {
-                int id;
-                cout << "Enter Member ID: ";
-                cin >> id;
-                lib.updateMemberInfo(id);
-                break;
-            }
-
-            case 10:
-                lib.deleteMember();
-                break;
-
-            case 11:
-                lib.sortMembersById();
-                cout << "Members sorted by ID.\n";
-                break;
-
-            case 0:
-                cout << "Exiting test program.\n";
-                break;
-
-            default:
-                cout << "Invalid choice.\n";
-        }
-
-    } while (choice != 0);
+    cout << "\n====================================\n";
+    cout << "RESULT: " << passed << "/" << total << " tests passed.\n";
+    cout << "====================================\n";
 
     return 0;
 }

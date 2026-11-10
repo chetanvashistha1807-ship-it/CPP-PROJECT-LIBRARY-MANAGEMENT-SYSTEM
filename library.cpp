@@ -201,3 +201,50 @@ void Library::sortMembersById(){
         return a.getMemberId() < b.getMemberId();
        });
 }
+
+void Library::issuebook(){
+    int bookId, MemberId, x,y;
+    //Check for MEMBER.
+    cout<<"Enter Member Id: ";
+    cin>>MemberId;
+    bool foundMember = false;
+    for(int i = 0; i<members.size(); i++){
+        if(members[i].getMemberId()==MemberId){
+            foundMember=true;
+            x = i;
+            break;
+        }
+    } if(foundMember == false){
+        cout<<"No member found";
+        return;
+    }
+    //Check For BOOK.
+    cout<<endl<<"Enter Book Id: ";
+    cin>>bookId;
+    bool foundBook = false;
+    for(int i = 0; i<books.size(); i++){
+        if(books[i].getBookId()==bookId){
+            foundBook=true;
+            y = i;
+            break;
+        }
+    } if(foundBook==false){
+        cout<<"No Book found";
+        return;
+    }
+    
+    //Issuing book 
+    if(!members[x].addBorrowedBook(bookId)){
+    return;
+        }
+
+   if(!books[y].issueBook()){
+    members[x].removeBook(bookId);
+    cout<<"No copies available";
+    return;
+  }
+
+   cout<<"Book issued successfully";
+    
+    
+}

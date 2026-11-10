@@ -23,7 +23,7 @@ Book::Book(int id, string Title, string Author, int Total_copies, int Available_
 bool Book::issueBook(){
     if(available_copies>0){
         available_copies--;
-        cout<<"issued successfully";
+        
         return true;
     }
     else return false;

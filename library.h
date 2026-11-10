@@ -25,6 +25,7 @@ class Library{
     bool updateMemberInfo(int id);
     bool deleteMember();
     void sortMembersById();
+    void issuebook();
 
     
 };

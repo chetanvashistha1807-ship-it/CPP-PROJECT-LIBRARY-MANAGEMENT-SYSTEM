@@ -1,5 +1,6 @@
 #pragma once
 #include<iostream>
+#include<vector>
 using namespace std;
 
 class Member{
@@ -8,6 +9,7 @@ class Member{
     string name;
     string email;
     string phone;
+    vector<int> borrowedBookIds;
 
     public:
     Member(int Id, string Name, string Email, string Phone);
@@ -24,6 +26,9 @@ class Member{
     
     //Display Function
     void displayMemberInfo();
+    bool addBorrowedBook(int id);
+    bool removeBook(int id);
+    
 
 
 
