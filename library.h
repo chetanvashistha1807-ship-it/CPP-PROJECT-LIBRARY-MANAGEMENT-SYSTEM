@@ -26,6 +26,6 @@ class Library{
     bool deleteMember();
     void sortMembersById();
     void issuebook();
-
+    void returnbook();
     
 };

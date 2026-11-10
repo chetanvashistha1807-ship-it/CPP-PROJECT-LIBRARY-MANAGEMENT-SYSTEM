@@ -248,3 +248,53 @@ void Library::issuebook(){
     
     
 }
+
+void Library::returnbook(){
+    int bookId, MemberId, x,y;
+    //Check for MEMBER.
+    cout<<"Enter Member Id: ";
+    cin>>MemberId;
+    bool foundMember = false;
+    for(int i = 0; i<members.size(); i++){
+        if(members[i].getMemberId()==MemberId){
+            foundMember=true;
+            x = i;
+            break;
+        }
+    } if(foundMember == false){
+        cout<<"No member found";
+        return;
+    } 
+    cout<<"Enter Book Id to return: ";
+    cin>>bookId;
+    bool bookExists = false;
+    for(int i = 0; i<books.size(); i++){
+        if(books[i].getBookId()==bookId){
+            y = i;
+            bookExists = true;
+            break;
+        }
+    }
+    
+    if(bookExists==false){
+        cout<<"No Book with this book id found.";
+        return;
+    }
+
+   
+    bool foundBook = members[x].removeBook(bookId);
+    if(foundBook==false){
+        cout<<"Return Failed";
+        return;
+    }
+    bool returnedBook = books[y].returnBook();
+    if(returnedBook==false){
+        members[x].addBorrowedBook(bookId);
+        return;
+    }
+    
+    
+    
+    
+    
+}
