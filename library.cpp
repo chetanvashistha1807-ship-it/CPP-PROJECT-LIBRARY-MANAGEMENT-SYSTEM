@@ -1,11 +1,46 @@
 #include "library.h"
 #include<string>
 #include<iostream>
-#include<algorithm> //used for using inbuilt sort function of cpp.
+#include<algorithm>
+#include <stdexcept>
 
 
 using namespace std;
 
+
+void Library::loadData() {
+    books.clear();
+    members.clear();
+
+    try {
+        vector<int> bookIds = fileManager.loadBookIds();
+        for (int i = 0; i < bookIds.size(); i++) {
+            try {
+                books.push_back(fileManager.loadBook(bookIds[i]));
+            } catch (const exception& e) {
+                cout << "Skipping book " << bookIds[i] << ": " << e.what() << endl;
+            } catch (const char* e) {
+                cout << "Skipping book " << bookIds[i] << ": " << e << endl;
+            }
+        }
+
+        vector<int> memberIds = fileManager.loadMemberIds();
+        for (int i = 0; i < memberIds.size(); i++) {
+            try {
+                members.push_back(fileManager.loadMember(memberIds[i]));
+            } catch (const exception& e) {
+                cout << "Skipping member " << memberIds[i] << ": " << e.what() << endl;
+            } catch (const char* e) {
+                cout << "Skipping member " << memberIds[i] << ": " << e << endl;
+            }
+        }
+
+        cout << "Data loading completed. Books: " << books.size()
+             << ", Members: " << members.size() << endl;
+    } catch (const exception& e) {
+        cout << "Unable to read data registry: " << e.what() << endl;
+    }
+}
 
 //Every function related to books.
 void Library::addBook(const Book& book) {
@@ -37,6 +72,7 @@ void Library::addBook(const Book& book) {
 
     // Rewrite the registry
     if (!fileManager.saveBookIds(bookIds)) {
+        fileManager.deleteBookFile(x);
         cout << "Failed to update book registry!";
         return;
     }
@@ -82,6 +118,7 @@ bool Library::updateBookInfo(int bookId){
             getline(cin,s);      //cin only takes one word at a time, so a sentence will not be eligible for it and it will tak only the first word.That is why we have used the getline function.
  
             books[found].updateTitle(s);
+            if (!fileManager.saveBook(books[found])) { cout << "Saving updated book failed."; return false; }
             cout<<"successfully updated";
             return true;
             } 
@@ -90,6 +127,7 @@ bool Library::updateBookInfo(int bookId){
                 cout<<"Enter new Author: ";
                 getline(cin,s);
                 books[found].updateAuthor(s);
+                if (!fileManager.saveBook(books[found])) { cout << "Saving updated book failed."; return false; }
                 cout<<"successfully updated";
                 return true;
             } else if(choice==3){
@@ -325,7 +363,9 @@ void Library::issuebook(){
     
   }
 
-   if (!fileManager.saveBook(books[y]) || !fileManager.saveMember(members[x]))
+   bool bookSaved = fileManager.saveBook(books[y]);
+   bool memberSaved = fileManager.saveMember(members[x]);
+   if (!bookSaved || !memberSaved)
        cout << "Warning: issue succeeded in memory, but saving failed.";
    cout<<"Book issued successfully";
     
@@ -391,7 +431,9 @@ void Library::returnbook(){
         int newMember = books[y].getNextReservation();
 
         if(newMember == -1){
-            if (!fileManager.saveBook(books[y]) || !fileManager.saveMember(members[x]))
+            bool bookSaved = fileManager.saveBook(books[y]);
+            bool memberSaved = fileManager.saveMember(members[x]);
+            if (!bookSaved || !memberSaved)
                 cout << " Warning: return succeeded in memory, but saving failed.";
             cout << "Book returned successfully. No pending reservations.";
             return;
