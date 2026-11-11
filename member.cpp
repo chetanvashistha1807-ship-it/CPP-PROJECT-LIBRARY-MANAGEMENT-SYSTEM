@@ -66,7 +66,7 @@ bool Member::addBorrowedBook(int id){
 
 bool Member::removeBook(int id){
     for(int i = 0; i<borrowedBookIds.size(); i++){
-        if(borrowedBookIds[i]==id){
+        if(borrowedBookIds[i]==id){                                //check to checck if the member own this book or not.
             borrowedBookIds.erase(borrowedBookIds.begin()+i);
             return true;
         }

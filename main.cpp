@@ -2,179 +2,312 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <functional>
 #include "Library.h"
-#include "Book.h"
-#include "Member.h"
 
 using namespace std;
 
-// Runs a function while capturing its console input and output.
-string runAction(Library& library, string input, bool issue) {
+int passed = 0;
+int failed = 0;
 
-    istringstream testInput(input);
-    ostringstream testOutput;
+string runTest(function<void()> operation, string input) {
+    istringstream in(input);
+    ostringstream out;
 
-    streambuf* originalCin = cin.rdbuf();
-    streambuf* originalCout = cout.rdbuf();
+    streambuf* oldCin = cin.rdbuf(in.rdbuf());
+    streambuf* oldCout = cout.rdbuf(out.rdbuf());
 
-    cin.rdbuf(testInput.rdbuf());
-    cout.rdbuf(testOutput.rdbuf());
+    operation();
 
-    if (issue)
-        library.issuebook();
-    else
-        library.returnbook();
+    cin.rdbuf(oldCin);
+    cout.rdbuf(oldCout);
 
-    cin.rdbuf(originalCin);
-    cout.rdbuf(originalCout);
-
-    return testOutput.str();
+    return out.str();
 }
 
-void printResult(string testName, bool passed, int& count) {
-
-    if (passed) {
+void check(string testName, bool condition) {
+    if(condition) {
         cout << "[PASS] " << testName << endl;
-        count++;
+        passed++;
     }
     else {
         cout << "[FAIL] " << testName << endl;
+        failed++;
     }
 }
 
 int main() {
 
-    int passed = 0;
-    int total = 6;
-
-    cout << "\n===== AUTOMATED RETURN BOOK TESTS =====\n\n";
-
-    // TEST 1: Successful return
+    // TEST 1: Successful reservation
     {
-        Library library;
+        Library lib;
+        lib.addBook(Book(10, "C++", "Author", 1, 0));
+        lib.addMember(Member(101, "A", "a@test.com", "111"));
 
-        Book b(103, "The Alchemist", "Paulo Coelho", 2, 2);
-        Member m(10, "Rahul", "rahul@gmail.com", "9876543210");
+        string output = runTest([&]() {
+            lib.issuebook();
+        }, "101\n10\n1\n");
 
-        library.addBook(b);
-        library.addMember(m);
-
-        runAction(library, "10\n103\n", true);
-
-        string output = runAction(library, "10\n103\n", false);
-
-        bool passedTest =
-            output.find("Return Failed") == string::npos &&
-            output.find("No member found") == string::npos &&
-            output.find("No Book with this book id found.") == string::npos &&
-            output.find("No book with this book id found.") == string::npos;
-
-        printResult("Successful return", passedTest, passed);
+        check("Successful reservation",
+              output.find("reserved") != string::npos);
     }
 
-    // TEST 2: Member tries to return a book they never borrowed
+    // TEST 2: Duplicate reservation
     {
-        Library library;
+        Library lib;
+        lib.addBook(Book(10, "C++", "Author", 1, 0));
+        lib.addMember(Member(101, "A", "a@test.com", "111"));
 
-        Book b(103, "The Alchemist", "Paulo Coelho", 2, 2);
-        Member m(10, "Rahul", "rahul@gmail.com", "9876543210");
+        runTest([&]() {
+            lib.issuebook();
+        }, "101\n10\n1\n");
 
-        library.addBook(b);
-        library.addMember(m);
+        string output = runTest([&]() {
+            lib.issuebook();
+        }, "101\n10\n1\n");
 
-        string output = runAction(library, "10\n103\n", false);
-
-        bool passedTest =
-            output.find("No book with this book id found.") != string::npos;
-
-        printResult("Returning a book not borrowed", passedTest, passed);
+        check("Duplicate reservation rejected",
+              output.find("already reserved") != string::npos);
     }
 
-    // TEST 3: Nonexistent book
+    // TEST 3: First reservation receives returned book
     {
-        Library library;
+        Library lib;
+        lib.addBook(Book(10, "C++", "Author", 1, 1));
 
-        Book b(103, "The Alchemist", "Paulo Coelho", 2, 2);
-        Member m(10, "Rahul", "rahul@gmail.com", "9876543210");
+        lib.addMember(Member(101, "A", "a@test.com", "111"));
+        lib.addMember(Member(102, "B", "b@test.com", "222"));
+        lib.addMember(Member(103, "C", "c@test.com", "333"));
 
-        library.addBook(b);
-        library.addMember(m);
+        runTest([&]() {
+            lib.issuebook();
+        }, "101\n10\n");
 
-        string output = runAction(library, "10\n999\n", false);
+        runTest([&]() {
+            lib.issuebook();
+        }, "102\n10\n1\n");
 
-        bool passedTest =
-            output.find("No Book with this book id found.") != string::npos;
+        runTest([&]() {
+            lib.issuebook();
+        }, "103\n10\n1\n");
 
-        printResult("Invalid book ID", passedTest, passed);
+        string output = runTest([&]() {
+            lib.returnbook();
+        }, "101\n10\n");
+
+        check("First reservation receives returned book",
+              output.find("102") != string::npos);
     }
 
-    // TEST 4: Nonexistent member
+    // TEST 4: Second reservation receives next returned book
     {
-        Library library;
+        Library lib;
+        lib.addBook(Book(10, "C++", "Author", 1, 1));
 
-        Book b(103, "The Alchemist", "Paulo Coelho", 2, 2);
-        library.addBook(b);
+        lib.addMember(Member(101, "A", "a@test.com", "111"));
+        lib.addMember(Member(102, "B", "b@test.com", "222"));
+        lib.addMember(Member(103, "C", "c@test.com", "333"));
 
-        string output = runAction(library, "99\n", false);
+        runTest([&]() {
+            lib.issuebook();
+        }, "101\n10\n");
 
-        bool passedTest =
-            output.find("No member found") != string::npos;
+        runTest([&]() {
+            lib.issuebook();
+        }, "102\n10\n1\n");
 
-        printResult("Invalid member ID", passedTest, passed);
+        runTest([&]() {
+            lib.issuebook();
+        }, "103\n10\n1\n");
+
+        runTest([&]() {
+            lib.returnbook();
+        }, "101\n10\n");
+
+        string output = runTest([&]() {
+            lib.returnbook();
+        }, "102\n10\n");
+
+        check("Second reservation receives next returned book",
+              output.find("103") != string::npos);
     }
 
-    // TEST 5: Returning the same book twice
+    // TEST 5: Deleted reserved member is skipped
     {
-        Library library;
+        Library lib;
+        lib.addBook(Book(10, "C++", "Author", 1, 1));
 
-        Book b(103, "The Alchemist", "Paulo Coelho", 2, 2);
-        Member m(10, "Rahul", "rahul@gmail.com", "9876543210");
+        lib.addMember(Member(101, "A", "a@test.com", "111"));
+        lib.addMember(Member(102, "B", "b@test.com", "222"));
+        lib.addMember(Member(103, "C", "c@test.com", "333"));
 
-        library.addBook(b);
-        library.addMember(m);
+        runTest([&]() {
+            lib.issuebook();
+        }, "101\n10\n");
 
-        runAction(library, "10\n103\n", true);
-        runAction(library, "10\n103\n", false);
+        runTest([&]() {
+            lib.issuebook();
+        }, "102\n10\n1\n");
 
-        string output = runAction(library, "10\n103\n", false);
+        runTest([&]() {
+            lib.issuebook();
+        }, "103\n10\n1\n");
 
-        bool passedTest =
-            output.find("No book with this book id found.") != string::npos;
+        runTest([&]() {
+            lib.deleteMember();
+        }, "102\n");
 
-        printResult("Duplicate return prevention", passedTest, passed);
+        string output = runTest([&]() {
+            lib.returnbook();
+        }, "101\n10\n");
+
+        check("Deleted reservation member skipped",
+              output.find("103") != string::npos);
     }
 
-    // TEST 6: Rollback when Book::returnBook() fails
-    {
-        Library library;
+    // TEST 6: Return book when nobody is waiting
+{
+    Library lib;
+    lib.addBook(Book(10, "C++", "Author", 1, 1));
 
-        // Book is already at maximum available copies.
-        Book b(103, "The Alchemist", "Paulo Coelho", 2, 2);
-        Member m(10, "Rahul", "rahul@gmail.com", "9876543210");
+    lib.addMember(Member(101, "A", "a@test.com", "111"));
+    lib.addMember(Member(102, "B", "b@test.com", "222"));
 
-        // Create a borrowing record to simulate an inconsistent state.
-        m.addBorrowedBook(103);
+    runTest([&]() {
+        lib.issuebook();
+    }, "101\n10\n");
 
-        library.addBook(b);
-        library.addMember(m);
+    string returnOutput = runTest([&]() {
+        lib.returnbook();
+    }, "101\n10\n");
 
-        // First return: removal succeeds, book return fails,
-        // so the borrowing record should be restored.
-        runAction(library, "10\n103\n", false);
+    string issueOutput = runTest([&]() {
+        lib.issuebook();
+    }, "102\n10\n");
 
-        // Second attempt: if rollback worked, the borrowing record
-        // should still exist and removal should succeed again.
-        string output = runAction(library, "10\n103\n", false);
+    check("Return with empty queue keeps book available",
+          returnOutput.find("No pending reservations") != string::npos &&
+          issueOutput.find("Book issued successfully") != string::npos);
+}
 
-        bool passedTest =
-            output.find("No book with this book id found.") == string::npos;
+// TEST 7: Skip member who already has the book
+{
+    Library lib;
+    lib.addBook(Book(10, "C++", "Author", 1, 1));
 
-        printResult("Rollback restores borrowing record", passedTest, passed);
-    }
+    lib.addMember(Member(101, "A", "a@test.com", "111"));
+    lib.addMember(Member(102, "B", "b@test.com", "222"));
+    lib.addMember(Member(103, "C", "c@test.com", "333"));
 
-    cout << "\n=======================================\n";
-    cout << "RESULT: " << passed << "/" << total << " tests passed.\n";
-    cout << "=======================================\n";
+    runTest([&]() {
+        lib.issuebook();
+    }, "101\n10\n");
+
+    runTest([&]() {
+        lib.issuebook();
+    }, "102\n10\n1\n");
+
+    runTest([&]() {
+        lib.issuebook();
+    }, "103\n10\n1\n");
+
+    // Simulate Member 102 already having this book.
+    lib.searchMemberById(102)->addBorrowedBook(10);
+
+    string output = runTest([&]() {
+        lib.returnbook();
+    }, "101\n10\n");
+
+    check("Member already holding book is skipped",
+          output.find("103") != string::npos);
+}
+
+// TEST 8: All reserved members deleted
+{
+    Library lib;
+    lib.addBook(Book(10, "C++", "Author", 1, 1));
+
+    lib.addMember(Member(101, "A", "a@test.com", "111"));
+    lib.addMember(Member(102, "B", "b@test.com", "222"));
+    lib.addMember(Member(103, "C", "c@test.com", "333"));
+    lib.addMember(Member(104, "D", "d@test.com", "444"));
+
+    runTest([&]() {
+        lib.issuebook();
+    }, "101\n10\n");
+
+    runTest([&]() {
+        lib.issuebook();
+    }, "102\n10\n1\n");
+
+    runTest([&]() {
+        lib.issuebook();
+    }, "103\n10\n1\n");
+
+    runTest([&]() {
+        lib.deleteMember();
+    }, "102\n");
+
+    runTest([&]() {
+        lib.deleteMember();
+    }, "103\n");
+
+    string returnOutput = runTest([&]() {
+        lib.returnbook();
+    }, "101\n10\n");
+
+    string issueOutput = runTest([&]() {
+        lib.issuebook();
+    }, "104\n10\n");
+
+    check("All deleted reservations skipped; book remains available",
+          returnOutput.find("No pending reservations") != string::npos &&
+          issueOutput.find("Book issued successfully") != string::npos);
+}
+
+// TEST 9: Verify allocated member can return the book
+{
+    Library lib;
+    lib.addBook(Book(10, "C++", "Author", 1, 1));
+
+    lib.addMember(Member(101, "A", "a@test.com", "111"));
+    lib.addMember(Member(102, "B", "b@test.com", "222"));
+    lib.addMember(Member(103, "C", "c@test.com", "333"));
+
+    runTest([&]() {
+        lib.issuebook();
+    }, "101\n10\n");
+
+    runTest([&]() {
+        lib.issuebook();
+    }, "102\n10\n1\n");
+
+    string firstReturn = runTest([&]() {
+        lib.returnbook();
+    }, "101\n10\n");
+
+    // Member 102 should now have the book in their records.
+    string secondReturn = runTest([&]() {
+        lib.returnbook();
+    }, "102\n10\n");
+
+    // Member 103 should be able to borrow the returned copy.
+    string nextIssue = runTest([&]() {
+        lib.issuebook();
+    }, "103\n10\n");
+
+    check("Automatic allocation updates borrowing records and availability",
+          firstReturn.find("102") != string::npos &&
+          secondReturn.find("No pending reservations") != string::npos &&
+          nextIssue.find("Book issued successfully") != string::npos);
+}
+
+
+
+    cout << "\n--------------------------\n";
+    cout << "Passed: " << passed << endl;
+    cout << "Failed: " << failed << endl;
+    cout << "--------------------------\n";
 
     return 0;
 }

@@ -60,3 +60,26 @@ void Book::updateTitle(string s){
 void Book::updateAuthor(string s){
     author = s;
 }
+
+bool Book::reserveMember(int id){//here id is the id of member not of book.
+    queue<int> temp = reservation;
+    
+    while(!temp.empty()){
+       if(temp.front()==id){
+        cout<<"This book is already reserved to the member with id "<<id;
+        return false;
+       }
+       temp.pop();
+    }
+    reservation.push(id);
+    cout<<"Book is reserved to the member with member id "<<id;
+    return true;
+}
+
+int Book::getNextReservation(){
+    if(reservation.empty())return -1;
+    int memberId = reservation.front();
+    reservation.pop();
+    return memberId;
+
+}

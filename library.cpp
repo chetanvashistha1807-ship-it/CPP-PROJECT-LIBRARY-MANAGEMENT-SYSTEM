@@ -240,8 +240,18 @@ void Library::issuebook(){
 
    if(!books[y].issueBook()){
     members[x].removeBook(bookId);
-    cout<<"No copies available";
-    return;
+    cout<<"No copies available. ";
+    cout<<"Would you like to reserve this book? "<<endl;
+    cout<<"1)Yes.    2).No";
+    int x;
+    cin>>x;
+    if(x==1){
+        books[y].reserveMember(MemberId);
+        return;
+    } else if(x==2) return;
+    else {cout<<"Invalid selection";
+    return;}
+    
   }
 
    cout<<"Book issued successfully";
@@ -250,51 +260,93 @@ void Library::issuebook(){
 }
 
 void Library::returnbook(){
-    int bookId, MemberId, x,y;
-    //Check for MEMBER.
-    cout<<"Enter Member Id: ";
-    cin>>MemberId;
+    int bookId, MemberId, x, y;
+
+    // Find the member returning the book
+    cout << "Enter Member Id: ";
+    cin >> MemberId;
+
     bool foundMember = false;
-    for(int i = 0; i<members.size(); i++){
-        if(members[i].getMemberId()==MemberId){
-            foundMember=true;
+
+    for(int i = 0; i < members.size(); i++){
+        if(members[i].getMemberId() == MemberId){
+            foundMember = true;
             x = i;
             break;
         }
-    } if(foundMember == false){
-        cout<<"No member found";
-        return;
-    } 
-    cout<<"Enter Book Id to return: ";
-    cin>>bookId;
-    bool bookExists = false;
-    for(int i = 0; i<books.size(); i++){
-        if(books[i].getBookId()==bookId){
-            y = i;
-            bookExists = true;
-            break;
-        }
     }
-    
-    if(bookExists==false){
-        cout<<"No Book with this book id found.";
+
+    if(!foundMember){
+        cout << "No member found";
         return;
     }
 
-   
-    bool foundBook = members[x].removeBook(bookId);
-    if(foundBook==false){
-        cout<<"Return Failed";
+    // Find the book
+    cout << "Enter Book Id to return: ";
+    cin >> bookId;
+
+    bool bookExists = false;
+
+    for(int i = 0; i < books.size(); i++){
+        if(books[i].getBookId() == bookId){
+            bookExists = true;
+            y = i;
+            break;
+        }
+    }
+
+    if(!bookExists){
+        cout << "No Book with this book id found.";
         return;
     }
-    bool returnedBook = books[y].returnBook();
-    if(returnedBook==false){
+
+    // Remove book from member's borrowed records
+    if(!members[x].removeBook(bookId)){
+        cout << "Return Failed";
+        return;
+    }
+
+    // Increase available copies
+    if(!books[y].returnBook()){
         members[x].addBorrowedBook(bookId);
         return;
     }
-    
-    
-    
-    
-    
+
+    // Allocate the returned copy to the next eligible reservation
+    while(true){
+
+        int newMember = books[y].getNextReservation();
+
+        if(newMember == -1){
+            cout << "Book returned successfully. No pending reservations.";
+            return;
+        }
+
+        bool foundReservedMember = false;
+        int z = -1;
+
+        for(int i = 0; i < members.size(); i++){
+            if(members[i].getMemberId() == newMember){
+                foundReservedMember = true;
+                z = i;
+                break;
+            }
+        }
+
+        // Skip members who no longer exist
+        if(!foundReservedMember){
+            continue;
+        }
+
+        // Skip members who already have this book
+        if(!members[z].addBorrowedBook(bookId)){
+            continue;
+        }
+
+        // Allocate the returned copy
+        books[y].issueBook();
+
+        cout << "Book issued to the reserving member with ID: " << newMember;
+        return;
+    }
 }
