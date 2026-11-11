@@ -23,6 +23,9 @@ class Book{
 
     int getBookId() const;
     string getTitle() const;
+    string getAuthor() const;
+    int getTotalCopies() const;
+    int getAvailableCopies() const;
 
     void updateTitle(string s);
     void updateAuthor(string s);

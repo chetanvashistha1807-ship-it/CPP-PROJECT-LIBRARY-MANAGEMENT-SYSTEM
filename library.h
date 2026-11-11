@@ -2,12 +2,14 @@
 #include<vector>
 #include "book.h"
 #include "member.h"
+#include"filemanager.h"
 using namespace std;
 
 class Library{
     private:
     vector<Book> books;
     vector<Member> members;
+    FileManager fileManager;
 
     public:
     void addBook(const Book& book); //Here we used const so that the library class can't modify the book object and we passed it by refrence rather than value

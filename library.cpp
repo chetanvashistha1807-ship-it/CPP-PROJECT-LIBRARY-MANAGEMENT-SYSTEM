@@ -1,4 +1,5 @@
 #include "library.h"
+#include<string>
 #include<iostream>
 #include<algorithm> //used for using inbuilt sort function of cpp.
 
@@ -7,15 +8,43 @@ using namespace std;
 
 
 //Every function related to books.
-void Library::addBook(const Book& book){
+void Library::addBook(const Book& book) {
     int x = book.getBookId();
-    for(int i = 0; i<books.size(); i++){
-        if(x==books[i].getBookId()){
-            cout<<"Book Id already exists ";
+
+    // Check for duplicate ID
+    for (int i = 0; i < books.size(); i++) {
+        if (x == books[i].getBookId()) {
+            cout << "Book ID already exists";
             return;
         }
     }
+
+    // Save individual book file
+    if (!fileManager.saveBook(book)) {
+        cout << "Failed to save book!";
+        return;
+    }
+
+    // Collect existing book IDs
+    vector<int> bookIds;
+
+    for (int i = 0; i < books.size(); i++) {
+        bookIds.push_back(books[i].getBookId());
+    }
+
+    // Add new book ID
+    bookIds.push_back(x);
+
+    // Rewrite the registry
+    if (!fileManager.saveBookIds(bookIds)) {
+        cout << "Failed to update book registry!";
+        return;
+    }
+
+    // Add book to memory only after persistence succeeds
     books.push_back(book);
+
+    cout << "Book added successfully!";
 }
 
 void Library::displayBooks(){
@@ -78,18 +107,42 @@ bool Library::updateBookInfo(int bookId){
     
 }
 
-bool Library::deleteBook(){
+bool Library::deleteBook() {
     int id;
-    cout<<"Enter book id which you want to delete: ";
-    cin>>id;
-    for(int i = 0; i<books.size(); i++){
-        if(books[i].getBookId()==id){
-            books.erase(books.begin()+i);
-            cout<<"Book deleted successfully";
+    cout << "Enter book id which you want to delete: ";
+    cin >> id;
+
+    for (int i = 0; i < books.size(); i++) {
+        if (books[i].getBookId() == id) {
+
+            // Collect IDs excluding the book being deleted
+            vector<int> bookIds;
+
+            for (int j = 0; j < books.size(); j++) {
+                if (j != i) {
+                    bookIds.push_back(books[j].getBookId());
+                }
+            }
+
+            // Update the registry
+            if (!fileManager.saveBookIds(bookIds)) {
+                cout << "Failed to update book registry!";
+                return false;
+            }
+
+            if (!fileManager.deleteBookFile(id)) {
+            cout << "Warning: Book removed from registry, but file deletion failed.";
+            }
+
+            // Delete from memory only after registry update succeeds
+            books.erase(books.begin() + i);
+
+            cout << "Book deleted successfully";
             return true;
         }
     }
-    cout<<"Book is not found";
+
+    cout << "Book is not found";
     return false;
 }
 
@@ -350,3 +403,4 @@ void Library::returnbook(){
         return;
     }
 }
+

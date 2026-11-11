@@ -52,7 +52,17 @@ int Book::getBookId() const{
 string Book::getTitle() const{
     return title;
 }
+string Book::getAuthor() const {
+    return author;
+}
 
+int Book::getTotalCopies() const {
+    return total_copies;
+}
+
+int Book::getAvailableCopies() const {
+    return available_copies;
+}
 void Book::updateTitle(string s){
     title = s;
 }
