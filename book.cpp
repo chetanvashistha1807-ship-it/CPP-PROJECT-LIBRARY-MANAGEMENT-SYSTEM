@@ -1,95 +1,85 @@
 #include "book.h"
-#include<iostream>
+#include <iostream>
 
+Book::Book(int id, string Title, string Author, int Total_copies, int Available_copies) {
+    if (id > 0) book_id = id;
+    else throw "Invalid book id";
 
-Book::Book(int id, string Title, string Author, int Total_copies, int Available_copies){
-    if(id>0){
-        book_id = id;
-    } else{
-        throw "Invalid book id";
-    }
-    if(Total_copies>=0)total_copies = Total_copies;
+    if (Total_copies >= 0) total_copies = Total_copies;
     else throw "Invalid total copies";
 
-    if(Available_copies>=0 && Available_copies<=Total_copies)available_copies =Available_copies;
+    if (Available_copies >= 0 && Available_copies <= Total_copies) available_copies = Available_copies;
     else throw "Invalid available copies";
 
     title = Title;
     author = Author;
-    
 }
 
- 
-bool Book::issueBook(){
-    if(available_copies>0){
+bool Book::issueBook() {
+    if (available_copies > 0) {
         available_copies--;
-        
         return true;
     }
-    else return false;
+    return false;
 }
 
-bool Book::returnBook(){
-    if(available_copies<total_copies){
+bool Book::returnBook() {
+    if (available_copies < total_copies) {
         available_copies++;
-        cout<<"returned successfully";
+        cout << "returned successfully";
         return true;
-    } else return false;
+    }
+    return false;
 }
 
-void Book::displayBookInfo(){
-    cout<<"ID: "<<book_id<<endl;
-    cout<<"Title: "<<title<<endl;
-    cout<<"Author: "<<author<<endl;
-    cout<<"Total copies : "<<total_copies<<endl;
-    cout<<"Available copies: "<<available_copies<<endl;
+void Book::displayBookInfo() {
+    cout << "ID: " << book_id << endl;
+    cout << "Title: " << title << endl;
+    cout << "Author: " << author << endl;
+    cout << "Total copies : " << total_copies << endl;
+    cout << "Available copies: " << available_copies << endl;
 }
 
-int Book::getBookId() const{
-    return book_id;
-}
+int Book::getBookId() const { return book_id; }
+string Book::getTitle() const { return title; }
+string Book::getAuthor() const { return author; }
+int Book::getTotalCopies() const { return total_copies; }
+int Book::getAvailableCopies() const { return available_copies; }
 
-string Book::getTitle() const{
-    return title;
-}
-string Book::getAuthor() const {
-    return author;
-}
-
-int Book::getTotalCopies() const {
-    return total_copies;
-}
-
-int Book::getAvailableCopies() const {
-    return available_copies;
-}
-void Book::updateTitle(string s){
-    title = s;
-}
-
-void Book::updateAuthor(string s){
-    author = s;
-}
-
-bool Book::reserveMember(int id){//here id is the id of member not of book.
+vector<int> Book::getReservationIds() const {
+    vector<int> ids;
     queue<int> temp = reservation;
-    
-    while(!temp.empty()){
-       if(temp.front()==id){
-        cout<<"This book is already reserved to the member with id "<<id;
-        return false;
-       }
-       temp.pop();
+    while (!temp.empty()) {
+        ids.push_back(temp.front());
+        temp.pop();
+    }
+    return ids;
+}
+
+void Book::restoreReservation(int memberId) {
+    reservation.push(memberId);
+}
+
+void Book::updateTitle(string s) { title = s; }
+void Book::updateAuthor(string s) { author = s; }
+
+bool Book::reserveMember(int id) {
+    queue<int> temp = reservation;
+    while (!temp.empty()) {
+        if (temp.front() == id) {
+            cout << "This book is already reserved to the member with id " << id;
+            return false;
+        }
+        temp.pop();
     }
     reservation.push(id);
-    cout<<"Book is reserved to the member with member id "<<id;
+    cout << "Book is reserved to the member with member id " << id;
     return true;
 }
 
-int Book::getNextReservation(){
-    if(reservation.empty())return -1;
+int Book::getNextReservation() {
+    if (reservation.empty()) return -1;
     int memberId = reservation.front();
     reservation.pop();
     return memberId;
-
 }
