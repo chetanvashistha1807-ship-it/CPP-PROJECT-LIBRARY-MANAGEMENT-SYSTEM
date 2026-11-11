@@ -12,6 +12,7 @@ class Library{
     FileManager fileManager;
 
     public:
+    void loadData();
     void addBook(const Book& book); //Here we used const so that the library class can't modify the book object and we passed it by refrence rather than value
     void displayBooks();
     Book* searchBookById(int id);
