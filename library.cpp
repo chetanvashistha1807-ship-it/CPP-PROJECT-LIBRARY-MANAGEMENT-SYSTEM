@@ -463,7 +463,10 @@ void Library::returnbook(){
         // Allocate the returned copy
         books[y].issueBook();
 
-        if (!fileManager.saveBook(books[y]) || !fileManager.saveMember(members[x]) || !fileManager.saveMember(members[z]))
+        bool bookSaved = fileManager.saveBook(books[y]);
+        bool returningMemberSaved = fileManager.saveMember(members[x]);
+        bool receivingMemberSaved = fileManager.saveMember(members[z]);
+        if (!bookSaved || !returningMemberSaved || !receivingMemberSaved)
             cout << "Warning: allocation succeeded in memory, but saving failed.";
         cout << "Book issued to the reserving member with ID: " << newMember;
         return;
