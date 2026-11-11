@@ -173,7 +173,17 @@ void Library::addMember(const Member& member){
             return;
         }
     }
+    if (!fileManager.saveMember(member)) { cout << "Failed to save member!"; return; }
+    vector<int> ids;
+    for (int i = 0; i < members.size(); i++) ids.push_back(members[i].getMemberId());
+    ids.push_back(x);
+    if (!fileManager.saveMemberIds(ids)) {
+        fileManager.deleteMemberFile(x);
+        cout << "Failed to update member registry!";
+        return;
+    }
     members.push_back(member);
+    cout << "Member added successfully.";
 }
 
 void Library::displayMembers(){
@@ -208,18 +218,21 @@ bool Library::updateMemberInfo(int id){
             cout<<"Enter New Name: "<<endl;
             getline(cin,s);
             members[i].updateName(s);
+            if (!fileManager.saveMember(members[i])) { cout << "Saving updated member failed."; return false; }
             cout<<endl<<"Name updated successfully.";
             return true;
         }  else if(choice==2){
             cout<<"Enter New Email: "<<endl;
             getline(cin,s);
             members[i].updateEmail(s);
+            if (!fileManager.saveMember(members[i])) { cout << "Saving updated member failed."; return false; }
             cout<<endl<<"Email updated successfully.";
             return true;
         }  else if(choice==3){
             cout<<"Enter new phone number: "<<endl;
             cin>>s;
             members[i].updatePhone(s);
+            if (!fileManager.saveMember(members[i])) { cout << "Saving updated member failed."; return false; }
             cout<<endl<<"Phone updated successfully.";
             return true;
         }   else if(choice==4){
@@ -240,6 +253,10 @@ bool Library::deleteMember(){
     cin>>id;
     for(int i = 0 ; i<members.size(); i++){
         if(members[i].getMemberId()==id){
+            vector<int> ids;
+            for (int j = 0; j < members.size(); j++) if (j != i) ids.push_back(members[j].getMemberId());
+            if (!fileManager.saveMemberIds(ids)) { cout << "Failed to update member registry!"; return false; }
+            if (!fileManager.deleteMemberFile(id)) cout << "Warning: member file deletion failed.";
             members.erase(members.begin()+i);
             cout<<"Member deleted successfully.";
             return true;
@@ -299,7 +316,8 @@ void Library::issuebook(){
     int x;
     cin>>x;
     if(x==1){
-        books[y].reserveMember(MemberId);
+        if (books[y].reserveMember(MemberId) && !fileManager.saveBook(books[y]))
+            cout << "Warning: reservation was made but saving failed.";
         return;
     } else if(x==2) return;
     else {cout<<"Invalid selection";
@@ -307,6 +325,8 @@ void Library::issuebook(){
     
   }
 
+   if (!fileManager.saveBook(books[y]) || !fileManager.saveMember(members[x]))
+       cout << "Warning: issue succeeded in memory, but saving failed.";
    cout<<"Book issued successfully";
     
     
@@ -371,6 +391,8 @@ void Library::returnbook(){
         int newMember = books[y].getNextReservation();
 
         if(newMember == -1){
+            if (!fileManager.saveBook(books[y]) || !fileManager.saveMember(members[x]))
+                cout << " Warning: return succeeded in memory, but saving failed.";
             cout << "Book returned successfully. No pending reservations.";
             return;
         }
@@ -399,6 +421,8 @@ void Library::returnbook(){
         // Allocate the returned copy
         books[y].issueBook();
 
+        if (!fileManager.saveBook(books[y]) || !fileManager.saveMember(members[x]) || !fileManager.saveMember(members[z]))
+            cout << "Warning: allocation succeeded in memory, but saving failed.";
         cout << "Book issued to the reserving member with ID: " << newMember;
         return;
     }
