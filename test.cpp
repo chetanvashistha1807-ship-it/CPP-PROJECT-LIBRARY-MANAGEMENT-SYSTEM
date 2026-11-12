@@ -4,14 +4,13 @@
 #include <vector>
 #include <cstdio>
 #include <cstdlib>
+#include <exception>
 #include "library.h"
 
 using namespace std;
 
 int passed = 0;
 int failed = 0;
-
-string capture(void (*operation)(), const string& input); // Not used; operations below use the templated helper.
 
 template <typename Function>
 string runWithInput(Function operation, const string& input) {
@@ -52,11 +51,6 @@ int main() {
 
     // The project uses relative paths and the C++ standard library available in GCC 6.3.
     // Books/ and Members/ must already exist in the test-copy working directory.
-    {
-        ofstreamTestPlaceholder:
-        ;
-    }
-
     section("BOOK CLASS");
 
     {
