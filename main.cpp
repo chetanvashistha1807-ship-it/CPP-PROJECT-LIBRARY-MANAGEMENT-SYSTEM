@@ -1,313 +1,257 @@
-
 #include <iostream>
-#include <sstream>
 #include <string>
-#include <functional>
-#include "Library.h"
+#include <sstream>
+#include <limits>
+#include "library.h"
 
 using namespace std;
 
-int passed = 0;
-int failed = 0;
+// Read a complete line and accept it only if it contains one valid integer.
+int readInt(const string& prompt) {
+    string line;
+    int value;
+    while (true) {
+        cout << prompt;
+        if (!getline(cin, line)) {
+            return -1;
+        }
 
-string runTest(function<void()> operation, string input) {
-    istringstream in(input);
-    ostringstream out;
+        stringstream input(line);
+        char extra;
+        if (input >> value && !(input >> extra)) {
+            return value;
+        }
 
-    streambuf* oldCin = cin.rdbuf(in.rdbuf());
-    streambuf* oldCout = cout.rdbuf(out.rdbuf());
-
-    operation();
-
-    cin.rdbuf(oldCin);
-    cout.rdbuf(oldCout);
-
-    return out.str();
+        cout << "Invalid input. Please enter a whole number.\n";
+    }
 }
 
-void check(string testName, bool condition) {
-    if(condition) {
-        cout << "[PASS] " << testName << endl;
-        passed++;
+string readText(const string& prompt) {
+    string value;
+    cout << prompt;
+    getline(cin, value);
+    return value;
+}
+
+void showBookMenu() {
+    cout << "\n========== BOOK MANAGEMENT ==========\n"
+         << "1. Add book\n"
+         << "2. Display all books\n"
+         << "3. Search book by ID\n"
+         << "4. Update book information\n"
+         << "5. Delete book\n"
+         << "6. Sort books by ID\n"
+         << "7. Sort books by title\n"
+         << "0. Back to main menu\n";
+}
+
+void showMemberMenu() {
+    cout << "\n========= MEMBER MANAGEMENT =========\n"
+         << "1. Add member\n"
+         << "2. Display all members\n"
+         << "3. Search member by ID\n"
+         << "4. Update member information\n"
+         << "5. Delete member\n"
+         << "6. Sort members by ID\n"
+         << "0. Back to main menu\n";
+}
+
+void bookManagement(Library& library) {
+    while (true) {
+        showBookMenu();
+        int choice = readInt("Enter your choice: ");
+
+        switch (choice) {
+            case 1: {
+                int id = readInt("Enter book ID: ");
+                if (id <= 0) {
+                    cout << "Book ID must be positive.\n";
+                    break;
+                }
+
+                string title = readText("Enter book title: ");
+                string author = readText("Enter author name: ");
+                int copies = readInt("Enter total copies: ");
+
+                if (copies <= 0) {
+                    cout << "Total copies must be greater than zero.\n";
+                    break;
+                }
+
+                Book book(id, title, author, copies, copies);
+                library.addBook(book);
+                cout << endl;
+                break;
+            }
+
+            case 2:
+                cout << "\n--------------- BOOKS ---------------\n";
+                library.displayBooks();
+                break;
+
+            case 3: {
+                int id = readInt("Enter book ID to search: ");
+                if (id > 0) {
+                    library.searchBookById(id);
+                } else {
+                    cout << "Book ID must be positive.\n";
+                }
+                cout << endl;
+                break;
+            }
+
+            case 4: {
+                int id = readInt("Enter book ID to update: ");
+                if (id > 0) {
+                    library.updateBookInfo(id);
+                } else {
+                    cout << "Book ID must be positive.\n";
+                }
+                cout << endl;
+                break;
+            }
+
+            case 5:
+                library.deleteBook();
+                cout << endl;
+                break;
+
+            case 6:
+                library.sortBooksById();
+                cout << "Books sorted by ID.\n";
+                break;
+
+            case 7:
+                library.sortBooksByTitle();
+                cout << "Books sorted by title.\n";
+                break;
+
+            case 0:
+                return;
+
+            default:
+                cout << "Invalid choice. Select an option from the menu.\n";
+        }
     }
-    else {
-        cout << "[FAIL] " << testName << endl;
-        failed++;
+}
+
+void memberManagement(Library& library) {
+    while (true) {
+        showMemberMenu();
+        int choice = readInt("Enter your choice: ");
+
+        switch (choice) {
+            case 1: {
+                int id = readInt("Enter member ID: ");
+                if (id <= 0) {
+                    cout << "Member ID must be positive.\n";
+                    break;
+                }
+
+                string name = readText("Enter member name: ");
+                string email = readText("Enter email address: ");
+                string phone = readText("Enter phone number: ");
+
+                Member member(id, name, email, phone);
+                library.addMember(member);
+                cout << endl;
+                break;
+            }
+
+            case 2:
+                cout << "\n-------------- MEMBERS --------------\n";
+                library.displayMembers();
+                break;
+
+            case 3: {
+                int id = readInt("Enter member ID to search: ");
+                if (id > 0) {
+                    Member* member = library.searchMemberById(id);
+                    if (member != nullptr) {
+                        member->displayMemberInfo();
+                    }
+                } else {
+                    cout << "Member ID must be positive.\n";
+                }
+                cout << endl;
+                break;
+            }
+
+            case 4: {
+                int id = readInt("Enter member ID to update: ");
+                if (id > 0) {
+                    library.updateMemberInfo(id);
+                } else {
+                    cout << "Member ID must be positive.\n";
+                }
+                cout << endl;
+                break;
+            }
+
+            case 5:
+                library.deleteMember();
+                cout << endl;
+                break;
+
+            case 6:
+                library.sortMembersById();
+                cout << "Members sorted by ID.\n";
+                break;
+
+            case 0:
+                return;
+
+            default:
+                cout << "Invalid choice. Select an option from the menu.\n";
+        }
     }
 }
 
 int main() {
+    Library library;
 
-    // TEST 1: Successful reservation
-    {
-        Library lib;
-        lib.addBook(Book(10, "C++", "Author", 1, 0));
-        lib.addMember(Member(101, "A", "a@test.com", "111"));
+    cout << "=====================================\n"
+         << "       LIBRARY MANAGEMENT SYSTEM     \n"
+         << "=====================================\n";
 
-        string output = runTest([&]() {
-            lib.issuebook();
-        }, "101\n10\n1\n");
+    // Restore previously saved books and members before showing the menu.
+    library.loadData();
 
-        check("Successful reservation",
-              output.find("reserved") != string::npos);
+    while (true) {
+        cout << "\n============== MAIN MENU ==============\n"
+             << "1. Book management\n"
+             << "2. Member management\n"
+             << "3. Issue a book\n"
+             << "4. Return a book\n"
+             << "0. Save and exit\n";
+
+        int choice = readInt("Enter your choice: ");
+
+        switch (choice) {
+            case 1:
+                bookManagement(library);
+                break;
+
+            case 2:
+                memberManagement(library);
+                break;
+
+            case 3:
+                library.issuebook();
+                cout << endl;
+                break;
+
+            case 4:
+                library.returnbook();
+                cout << endl;
+                break;
+
+            case 0:
+                cout << "Exiting Library Management System. Goodbye!\n";
+                return 0;
+
+            default:
+                cout << "Invalid choice. Select an option from the menu.\n";
+        }
     }
-
-    // TEST 2: Duplicate reservation
-    {
-        Library lib;
-        lib.addBook(Book(10, "C++", "Author", 1, 0));
-        lib.addMember(Member(101, "A", "a@test.com", "111"));
-
-        runTest([&]() {
-            lib.issuebook();
-        }, "101\n10\n1\n");
-
-        string output = runTest([&]() {
-            lib.issuebook();
-        }, "101\n10\n1\n");
-
-        check("Duplicate reservation rejected",
-              output.find("already reserved") != string::npos);
-    }
-
-    // TEST 3: First reservation receives returned book
-    {
-        Library lib;
-        lib.addBook(Book(10, "C++", "Author", 1, 1));
-
-        lib.addMember(Member(101, "A", "a@test.com", "111"));
-        lib.addMember(Member(102, "B", "b@test.com", "222"));
-        lib.addMember(Member(103, "C", "c@test.com", "333"));
-
-        runTest([&]() {
-            lib.issuebook();
-        }, "101\n10\n");
-
-        runTest([&]() {
-            lib.issuebook();
-        }, "102\n10\n1\n");
-
-        runTest([&]() {
-            lib.issuebook();
-        }, "103\n10\n1\n");
-
-        string output = runTest([&]() {
-            lib.returnbook();
-        }, "101\n10\n");
-
-        check("First reservation receives returned book",
-              output.find("102") != string::npos);
-    }
-
-    // TEST 4: Second reservation receives next returned book
-    {
-        Library lib;
-        lib.addBook(Book(10, "C++", "Author", 1, 1));
-
-        lib.addMember(Member(101, "A", "a@test.com", "111"));
-        lib.addMember(Member(102, "B", "b@test.com", "222"));
-        lib.addMember(Member(103, "C", "c@test.com", "333"));
-
-        runTest([&]() {
-            lib.issuebook();
-        }, "101\n10\n");
-
-        runTest([&]() {
-            lib.issuebook();
-        }, "102\n10\n1\n");
-
-        runTest([&]() {
-            lib.issuebook();
-        }, "103\n10\n1\n");
-
-        runTest([&]() {
-            lib.returnbook();
-        }, "101\n10\n");
-
-        string output = runTest([&]() {
-            lib.returnbook();
-        }, "102\n10\n");
-
-        check("Second reservation receives next returned book",
-              output.find("103") != string::npos);
-    }
-
-    // TEST 5: Deleted reserved member is skipped
-    {
-        Library lib;
-        lib.addBook(Book(10, "C++", "Author", 1, 1));
-
-        lib.addMember(Member(101, "A", "a@test.com", "111"));
-        lib.addMember(Member(102, "B", "b@test.com", "222"));
-        lib.addMember(Member(103, "C", "c@test.com", "333"));
-
-        runTest([&]() {
-            lib.issuebook();
-        }, "101\n10\n");
-
-        runTest([&]() {
-            lib.issuebook();
-        }, "102\n10\n1\n");
-
-        runTest([&]() {
-            lib.issuebook();
-        }, "103\n10\n1\n");
-
-        runTest([&]() {
-            lib.deleteMember();
-        }, "102\n");
-
-        string output = runTest([&]() {
-            lib.returnbook();
-        }, "101\n10\n");
-
-        check("Deleted reservation member skipped",
-              output.find("103") != string::npos);
-    }
-
-    // TEST 6: Return book when nobody is waiting
-{
-    Library lib;
-    lib.addBook(Book(10, "C++", "Author", 1, 1));
-
-    lib.addMember(Member(101, "A", "a@test.com", "111"));
-    lib.addMember(Member(102, "B", "b@test.com", "222"));
-
-    runTest([&]() {
-        lib.issuebook();
-    }, "101\n10\n");
-
-    string returnOutput = runTest([&]() {
-        lib.returnbook();
-    }, "101\n10\n");
-
-    string issueOutput = runTest([&]() {
-        lib.issuebook();
-    }, "102\n10\n");
-
-    check("Return with empty queue keeps book available",
-          returnOutput.find("No pending reservations") != string::npos &&
-          issueOutput.find("Book issued successfully") != string::npos);
-}
-
-// TEST 7: Skip member who already has the book
-{
-    Library lib;
-    lib.addBook(Book(10, "C++", "Author", 1, 1));
-
-    lib.addMember(Member(101, "A", "a@test.com", "111"));
-    lib.addMember(Member(102, "B", "b@test.com", "222"));
-    lib.addMember(Member(103, "C", "c@test.com", "333"));
-
-    runTest([&]() {
-        lib.issuebook();
-    }, "101\n10\n");
-
-    runTest([&]() {
-        lib.issuebook();
-    }, "102\n10\n1\n");
-
-    runTest([&]() {
-        lib.issuebook();
-    }, "103\n10\n1\n");
-
-    // Simulate Member 102 already having this book.
-    lib.searchMemberById(102)->addBorrowedBook(10);
-
-    string output = runTest([&]() {
-        lib.returnbook();
-    }, "101\n10\n");
-
-    check("Member already holding book is skipped",
-          output.find("103") != string::npos);
-}
-
-// TEST 8: All reserved members deleted
-{
-    Library lib;
-    lib.addBook(Book(10, "C++", "Author", 1, 1));
-
-    lib.addMember(Member(101, "A", "a@test.com", "111"));
-    lib.addMember(Member(102, "B", "b@test.com", "222"));
-    lib.addMember(Member(103, "C", "c@test.com", "333"));
-    lib.addMember(Member(104, "D", "d@test.com", "444"));
-
-    runTest([&]() {
-        lib.issuebook();
-    }, "101\n10\n");
-
-    runTest([&]() {
-        lib.issuebook();
-    }, "102\n10\n1\n");
-
-    runTest([&]() {
-        lib.issuebook();
-    }, "103\n10\n1\n");
-
-    runTest([&]() {
-        lib.deleteMember();
-    }, "102\n");
-
-    runTest([&]() {
-        lib.deleteMember();
-    }, "103\n");
-
-    string returnOutput = runTest([&]() {
-        lib.returnbook();
-    }, "101\n10\n");
-
-    string issueOutput = runTest([&]() {
-        lib.issuebook();
-    }, "104\n10\n");
-
-    check("All deleted reservations skipped; book remains available",
-          returnOutput.find("No pending reservations") != string::npos &&
-          issueOutput.find("Book issued successfully") != string::npos);
-}
-
-// TEST 9: Verify allocated member can return the book
-{
-    Library lib;
-    lib.addBook(Book(10, "C++", "Author", 1, 1));
-
-    lib.addMember(Member(101, "A", "a@test.com", "111"));
-    lib.addMember(Member(102, "B", "b@test.com", "222"));
-    lib.addMember(Member(103, "C", "c@test.com", "333"));
-
-    runTest([&]() {
-        lib.issuebook();
-    }, "101\n10\n");
-
-    runTest([&]() {
-        lib.issuebook();
-    }, "102\n10\n1\n");
-
-    string firstReturn = runTest([&]() {
-        lib.returnbook();
-    }, "101\n10\n");
-
-    // Member 102 should now have the book in their records.
-    string secondReturn = runTest([&]() {
-        lib.returnbook();
-    }, "102\n10\n");
-
-    // Member 103 should be able to borrow the returned copy.
-    string nextIssue = runTest([&]() {
-        lib.issuebook();
-    }, "103\n10\n");
-
-    check("Automatic allocation updates borrowing records and availability",
-          firstReturn.find("102") != string::npos &&
-          secondReturn.find("No pending reservations") != string::npos &&
-          nextIssue.find("Book issued successfully") != string::npos);
-}
-
-
-
-    cout << "\n--------------------------\n";
-    cout << "Passed: " << passed << endl;
-    cout << "Failed: " << failed << endl;
-    cout << "--------------------------\n";
-
-    return 0;
 }
