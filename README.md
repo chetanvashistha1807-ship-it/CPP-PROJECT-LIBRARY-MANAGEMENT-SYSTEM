@@ -2,56 +2,56 @@
 
 A modular, console-based Library Management System built in C++ as a project-based learning exercise.
 
-The project focuses on Object-Oriented Programming, modular programming, STL containers, pointers, references, data structures, searching, sorting, and file handling.
+The application manages books and library members, supports issuing and returning books, maintains per-book FIFO reservation queues, and persists records between program runs.
 
-The system manages books and library members, supports borrowing and returning, maintains FIFO reservation queues, and stores records persistently so that data survives program restarts.
+## Features
 
-## Current Implementation Status
+### Book management
+- Add, display, search, update, and delete books.
+- Prevent duplicate book IDs.
+- Sort books by ID or title.
+- Track total and available copies.
 
-### Implemented
+### Member management
+- Add, display, search, update, and delete members.
+- Prevent duplicate member IDs.
+- Sort members by ID.
+- Maintain each member's currently borrowed book IDs.
 
-- Book management: add, display, search, update, delete, and sort.
-- Member management: add, display, search, update, delete, and sort.
-- Duplicate ID prevention.
-- Book issuing and returning.
-- Borrowing records maintained for each member.
-- Per-book FIFO reservation queues.
-- Automatic allocation of returned copies to eligible reserved members.
-- Rollback logic to maintain consistency when operations fail.
-- File persistence for books, members, borrowing records, and reservations.
-- Loading records when the application starts.
-- Separate files for individual book and member records.
-- ID registry files for tracking stored records.
-- Automated test harnesses for core workflows and file persistence.
+### Borrowing and reservations
+- Issue books to registered members when copies are available.
+- Return borrowed books and update availability.
+- Prevent duplicate borrowing and duplicate reservations.
+- Maintain a separate FIFO reservation queue for each book.
+- When a copy is returned, allocate it to the next eligible member.
+- Skip reservations belonging to deleted or otherwise ineligible members.
+- Keep book availability and member borrowing records consistent across operations.
 
-### Remaining
+### Persistent storage
+- Save individual book and member records as text files.
+- Maintain ID registry files for loading records at startup.
+- Persist borrowing records and reservation queues.
+- Restore saved records when the application starts.
 
-- Final interactive application menu.
-- Stronger input validation and stream failure recovery.
-- Final integration testing and refinement.
-
-## Project Structure
+## Project structure
 
 ```text
 CPP-PROJECT-LIBRARY-MANAGEMENT-SYSTEM/
 │
 ├── main.cpp
+├── test.cpp
 │
 ├── book.h
 ├── book.cpp
-│
 ├── member.h
 ├── member.cpp
-│
 ├── library.h
 ├── library.cpp
-│
 ├── filemanager.h
 ├── filemanager.cpp
 │
 ├── Books/
 │   └── .gitkeep
-│
 ├── Members/
 │   └── .gitkeep
 │
@@ -59,174 +59,87 @@ CPP-PROJECT-LIBRARY-MANAGEMENT-SYSTEM/
 └── README.md
 ```
 
-### Responsibilities of each file
-
 | File | Responsibility |
 |---|---|
-| `main.cpp` | Application entry point and current test harness |
-| `book.h/.cpp` | Book class and book-related operations |
-| `member.h/.cpp` | Member class and borrowing records |
-| `library.h/.cpp` | Coordinates library operations and workflows |
-| `filemanager.h/.cpp` | Handles saving, loading, and deleting persistent records |
+| `main.cpp` | Application entry point, input helpers, and interactive menus |
+| `book.h/.cpp` | Book data, copy availability, and reservation-queue operations |
+| `member.h/.cpp` | Member data and borrowed-book records |
+| `library.h/.cpp` | Coordinates book/member management, borrowing, returns, and reservations |
+| `filemanager.h/.cpp` | Saves, loads, and deletes persistent book/member records |
+| `test.cpp` | Automated test harness for classes, workflows, and persistence |
 
-The project uses separate header and implementation files to maintain modularity.
+The project separates declarations into header files and implementations into source files. This keeps class responsibilities distinct and makes the application a multi-file C++ program.
 
-## Architecture
+## Design and data structures
 
-### 1. Book
+### Book
 
-The `Book` class represents a book record in the library.
+A `Book` stores:
+- `book_id`: unique book identifier.
+- `title` and `author`: descriptive information.
+- `total_copies` and `available_copies`: inventory counts.
+- `queue<int> reservation`: member IDs waiting for this book.
 
-**Data members**
+Each book owns its own reservation queue, so reservations for different books remain independent.
 
-- `book_id`: Unique identifier for the book.
-- `title`: Book title.
-- `author`: Author name.
-- `total_copies`: Total physical copies owned.
-- `available_copies`: Copies currently available for issuing.
-- `reservation`: A `queue<int>` containing the IDs of members waiting for this book.
+### Member
 
-**Important operations**
+A `Member` stores:
+- `id`: unique member identifier.
+- `name`, `email`, and `phone`.
+- `vector<int> borrowedBookIds`: IDs of books currently borrowed by the member.
 
-| Function | Responsibility |
-|---|---|
-| `issueBook()` | Decreases available copies when a copy is available |
-| `returnBook()` | Increases available copies when a copy is returned |
-| `reserveMember(int id)` | Adds a member to the reservation queue |
-| `getNextReservation()` | Retrieves and removes the next reservation |
-| `getBookId() const` | Returns the book ID |
-| `getTitle() const` | Returns the book title |
-| `getReservationIds()` | Provides reservation IDs for persistence |
-| `restoreReservation(int memberId)` | Restores a reservation during loading |
+Phone numbers are stored as strings so leading zeroes and country-code characters are preserved.
 
-The reservation queue belongs to `Book` because each book has its own independent waiting list.
+### Library
 
-### 2. Member
-
-The `Member` class represents a registered library member.
-
-**Data members**
-
-- `id`: Unique member identifier.
-- `name`: Member name.
-- `email`: Email address.
-- `phone`: Phone number stored as a string.
-- `borrowedBookIds`: A `vector<int>` containing IDs of currently borrowed books.
-
-**Important operations**
-
-| Function | Responsibility |
-|---|---|
-| `addBorrowedBook(int id)` | Adds a book to the member's borrowing records |
-| `removeBook(int id)` | Removes a borrowed book from the member's records |
-| `getMemberId() const` | Returns the member ID |
-| `getBorrowedBookIds()` | Provides borrowed book IDs for persistence |
-| `restoreBorrowedBook(int bookId)` | Restores a borrowing record during loading |
-
-Phone numbers are stored as strings to preserve leading zeroes and country-code characters.
-
-### 3. Library
-
-The `Library` class coordinates the system and owns the main collections.
-
+The `Library` class coordinates operations across books and members. It owns:
 ```cpp
 vector<Book> books;
 vector<Member> members;
 FileManager fileManager;
 ```
 
-**Book operations**
+Search functions return pointers to stored objects when a matching ID is found, or `nullptr` otherwise. IDs are used as stable identifiers rather than vector positions, because sorting or deleting elements can change vector indexes.
 
-- Add, display, search, update, and delete books.
-- Sort books by ID.
-- Sort books alphabetically by title.
+### FileManager
 
-**Member operations**
+`FileManager` handles persistence separately from the library's operational logic. It provides operations to save, load, and delete individual records, and to read/write the ID registries.
 
-- Add, display, search, update, and delete members.
-- Sort members by ID.
+## Important workflows
 
-**Borrowing operations**
+### Issuing a book
+1. Locate the member and requested book by ID.
+2. Check that the member is not already borrowing that book.
+3. Record the borrowing against the member.
+4. Issue a copy if one is available.
+5. If the issue cannot be completed, roll back the temporary borrowing change.
+6. If no copy is available, the member can request a reservation.
+7. Persist the affected records.
 
-- Issue books to members.
-- Process book returns.
-- Maintain borrowing records.
-- Handle reservation requests.
-- Allocate returned copies to the next eligible member.
+### Returning a book
+1. Locate the member and book.
+2. Confirm and remove the borrowing record.
+3. Update the book's available-copy count.
+4. Process reservations in FIFO order.
+5. Skip members who no longer exist or are not eligible to receive the book.
+6. Allocate the returned copy to the first eligible reservation, then persist the affected records.
 
-**Persistence operations**
+### Reservation queue
 
-- Save updated book and member records.
-- Delete corresponding files when records are deleted.
-- Load saved records when the library is initialized.
-
-The `Library` class acts as the coordinator: `Book` manages book-specific state, `Member` manages member-specific state, and `Library` coordinates operations involving both.
-
-### 4. FileManager
-
-The `FileManager` class is responsible for persistent storage.
-
-It separates file operations from the business logic implemented in `Library`.
-
-**Main operations**
-
-| Function | Responsibility |
-|---|---|
-| `saveBook(const Book&)` | Saves a book record |
-| `loadBook(int id)` | Loads a book using its ID |
-| `saveBookIds(const vector<int>&)` | Saves the book ID registry |
-| `loadBookIds()` | Reads the book ID registry |
-| `deleteBookFile(int id)` | Deletes a book's data file |
-| `saveMember(const Member&)` | Saves a member record |
-| `loadMember(int id)` | Loads a member using their ID |
-| `saveMemberIds(const vector<int>&)` | Saves the member ID registry |
-| `loadMemberIds()` | Reads the member ID registry |
-| `deleteMemberFile(int id)` | Deletes a member's data file |
-
-## Important Workflows
-
-### Book Issuing
-
-1. Find the member using their ID.
-2. Find the requested book using its ID.
-3. Check whether the member already has that book.
-4. Add the book ID to the member's borrowing records.
-5. Decrease the book's available-copy count.
-6. If no copy is available, roll back the temporary borrowing record.
-7. Offer the member an opportunity to reserve the book.
-8. Persist the affected records.
-
-### Book Returning
-
-1. Find the member and book.
-2. Remove the book from the member's borrowing records.
-3. Increase the book's available-copy count.
-4. Process the reservation queue in FIFO order.
-5. Skip deleted members and members who already have the book.
-6. Allocate the returned copy to the first eligible member.
-7. Persist the updated book and member records.
-
-### Reservation Queue
-
-Each book maintains its own queue of waiting member IDs.
-
-The queue follows **FIFO (First In, First Out)**.
-
-For example:
+A book's reservation queue stores member IDs in arrival order:
 
 ```text
 Front -> 102 -> 103 -> 104 <- Back
 ```
 
-When a copy is returned, member 102 is considered first. If that member is no longer eligible, the system checks the next reservation.
+Member 102 is considered first. If that reservation is no longer eligible, the system checks the next one. The queue stores IDs rather than vector indexes so that sorting the member collection does not invalidate reservations.
 
-The queue stores member IDs rather than vector indexes because vector positions can change after sorting or deletion.
+## File storage format
 
-## File Persistence Design
+The application uses relative paths and expects the `Books/` and `Members/` directories to exist in its working directory.
 
-The system uses individual text files for book and member records, along with separate ID registry files.
-
-### Directory Structure
+Example layout:
 
 ```text
 Books/
@@ -240,126 +153,61 @@ Members/
 └── MemberIds.txt
 ```
 
-### Book Record Format
+Each book file stores its ID, title, author, total copies, available copies, and reservation member IDs. Each member file stores the member ID, name, email, phone number, and borrowed book IDs. The registry files contain the IDs used to locate individual records during startup.
 
-A book file stores:
+The project uses ID registries instead of directory iteration. This also avoids depending on `std::filesystem`, which was not available in the older MinGW GCC 6.3.0 toolchain used during development.
 
-1. Book ID
-2. Title
-3. Author
-4. Total copies
-5. Available copies
-6. Reservation member IDs, one per line
+## Build and run
 
-### Member Record Format
-
-A member file stores:
-
-1. Member ID
-2. Name
-3. Email
-4. Phone number
-5. Borrowed book IDs, one per line
-
-### Why ID Registry Files?
-
-Instead of relying on directory iteration, the system maintains registry files containing the IDs of stored books and members.
-
-During loading:
-
-1. Read the relevant ID registry.
-2. Retrieve each record using its ID.
-3. Reconstruct the corresponding objects.
-4. Restore borrowing records and reservation queues.
-5. Skip missing or malformed records with appropriate messages.
-
-This approach also avoids using `std::filesystem`, which is not supported by the older MinGW GCC 6.3.0 toolchain used during development.
-
-## Design Decisions
-
-- **Vectors:** Used for storing books and members because they provide straightforward iteration, searching, sorting, and deletion.
-- **Queues:** Used for per-book reservations to maintain FIFO order.
-- **Pointers:** Search functions can return pointers to stored objects, avoiding unnecessary object copies.
-- **IDs:** Used as stable identifiers instead of relying on vector indexes.
-- **Separate classes:** Each class has a defined responsibility.
-- **FileManager:** Separates persistence logic from library operations.
-- **Rollback logic:** Helps maintain consistency when a multi-step operation fails.
-- **Boolean return values:** Used by operations to communicate success or failure.
-
-## Testing
-
-The project has used separate test harnesses to verify different parts of the system.
-
-### Reservation and Borrowing Workflows
-
-Earlier test harnesses covered:
-
-- Successful borrowing and returning.
-- Invalid book and member IDs.
-- Duplicate borrowing and returning.
-- Reservation requests.
-- Duplicate reservation prevention.
-- FIFO reservation allocation.
-- Skipping deleted or ineligible members.
-- Maintaining consistent borrowing records and available-copy counts.
-
-### File Persistence
-
-The persistence test harness completed with **11/11 tests passing**.
-
-The tests covered:
-
-- Saving books and members.
-- Persisting borrowing records.
-- Persisting reservation queues.
-- Loading records into a new `Library` instance.
-- Restoring borrowing and reservation data after restarting.
-- Allocating a returned copy after loading.
-- Verifying that updated records survive another restart.
-
-These are development test-harness results, not a claim of a continuously running CI pipeline.
-
-## Build and Run
-
-The project was developed using the GCC/MinGW toolchain.
-
-Compile all implementation files together:
+Compile the application from the project directory:
 
 ```bash
-g++ main.cpp book.cpp member.cpp library.cpp filemanager.cpp -o library
+g++ -std=c++11 main.cpp book.cpp member.cpp library.cpp filemanager.cpp -o library
 ```
 
 Run on Windows PowerShell:
 
 ```powershell
-.\library.exe
+.\\library.exe
 ```
 
-The current `main.cpp` is still being used as a test harness. The final interactive menu and stronger input validation are remaining development tasks.
+At startup, the application loads saved records and displays the main menu. The menu provides book management, member management, issuing, returning, and exit options. Changes are persisted through the library/file-management operations.
 
-## Current Limitations
+## Running the automated tests
 
-- Input validation and recovery from invalid stream input still need refinement.
-- Constructor validation currently uses string literals for exceptions.
-- The project is designed as a learning-oriented console application, not a production-grade library management system.
-- Advanced features such as undo/redo, borrowing history, fines, due dates, and overdue tracking are intentionally outside the current base-project scope.
+The test harness compiles separately from the application:
 
-## Concepts Practised
+```bash
+g++ -std=c++11 test.cpp book.cpp member.cpp library.cpp filemanager.cpp -o test
+```
+
+Run on Windows PowerShell:
+
+```powershell
+.\\test.exe
+```
+
+**Important:** Run the test executable from a separate, clean copy of the project with empty `Books/` and `Members/` directories. The tests write test records and replace the ID registry files; running them in a directory containing real library data can overwrite that data.
+
+The local test run reported for this project completed with **77 tests passing**. This is a locally run test-harness result, not a claim of a configured continuous-integration pipeline.
+
+## Concepts practised
 
 - Classes, objects, constructors, and encapsulation.
-- Header and source file separation.
-- Multi-file compilation and linking.
-- `std::vector` and `std::queue`.
+- Header/source separation and multi-file compilation/linking.
+- Object relationships and separation of responsibilities.
+- `std::vector` for collections of books, members, and borrowed IDs.
+- `std::queue` for FIFO reservations.
 - Pointers, references, and `nullptr`.
 - Searching and sorting with `std::sort` and lambda comparators.
-- FIFO queue operations.
-- Object relationships and coordination.
-- Console input using `cin`, `getline()`, and `cin.ignore()`.
-- File handling using input and output file streams.
-- Serialization and reconstruction of objects.
-- Persistent storage and ID registries.
-- Rollback logic and consistency across multiple objects.
-- Test input/output redirection using string streams.
+- Console input with `cin`, `getline()`, and stream handling.
+- File streams, text-file persistence, and object reconstruction.
+- Maintaining consistency across related objects and rolling back failed operations.
+- Automated testing with redirected input/output streams.
+
+## Scope and limitations
+
+This is a learning-oriented C++ console application, not a production library platform. It focuses on core catalog, member, borrowing, reservation, and persistence workflows. Features such as due dates, overdue fines, borrowing history, authentication, a graphical interface, and database-backed storage are outside the current project scope.
 
 ---
 
